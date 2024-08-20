@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { IUser } from '../domain/entities/IUser';
 
-export interface IUserDocument extends IUser, Document {}
+export interface IUserDocument extends IUser, Document { }
 
 const userSchema: Schema = new Schema({
   name: {
@@ -40,6 +40,10 @@ const userSchema: Schema = new Schema({
   desc: {
     type: String,
     maxlength: 50,
+  },
+  isBlocked: {
+    type: Boolean,
+    default: false
   },
   created_at: {
     type: Date,

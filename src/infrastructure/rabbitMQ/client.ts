@@ -4,6 +4,7 @@ import Producer from "./producer";
 import Consumer from "./consumer";
 
 class RabbitMQClient {
+    
     private static instance: RabbitMQClient;
     private connection: Connection | undefined;
     private producerChannel: Channel | undefined;

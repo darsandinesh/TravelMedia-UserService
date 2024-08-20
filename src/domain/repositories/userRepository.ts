@@ -47,6 +47,52 @@ export class UserRepository {
         }
     }
 
+    async checkUser(email: string, password: string): Promise<{ success: boolean, message: string, user_data?: IUser }> {
+        try {
+            const user_data = await User.findOne({ email }).exec();
+
+            if (!user_data) {
+                return { success: false, message: "Incorrect Email Address or Password" };
+            }
+
+            const passwordMatch = await bcrypt.compare(password, user_data.password);
+            if (!passwordMatch) {
+                return { success: false, message: "Incorrect Email Address or Password" };
+            }
+
+            if (user_data.isBlocked) {
+                return { success: false, message: "You have been blocked by the admin", user_data };
+            }
+            return { success: true, message: "Logged in successful", user_data };
+
+
+        } catch (error) {
+            const err = error as Error;
+            console.error("Error saving user:", err);
+            throw new Error(`Error saving user: ${err.message}`);
+        }
+    }
+
+    async resetPassword(email: string, password: string): Promise<any> {
+        try {
+            const newHashedPass = await bcrypt.hash(password, 10);
+            let user_data = await User.findOne({ email }).exec();
+            if (user_data) {
+                console.log('if in repo')
+                const res = await User.updateOne({ email: email }, { $set: { password: newHashedPass } });
+                console.log(res);
+                return { success: true, message: 'Password changed successfully' }
+            } else {
+                console.log('else in repo')
+                return { success: false, message: 'Something went wrong, Plase try again later.' }
+            }
+
+        } catch (error) {
+
+        }
+    }
+
+
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------

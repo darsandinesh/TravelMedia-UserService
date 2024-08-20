@@ -8,5 +8,6 @@ export interface IUser {
     isOnline?:boolean;
     isAdmin?: boolean;
     desc?: string;
+    isBlocked?:boolean;
     created_at?: Date;
 }
