@@ -12,6 +12,10 @@ export default class MessageHandlers {
                 console.log('Handling operation:', operation);
                 response = await userController.registerUser(data);
                 break;
+            case 'resend_otp':
+                console.log('Handling operation :', operation);
+                response = await userController.resendOtp(data);
+                break;
             case 'save_user':
                 console.log('Handling user save');
                 response = await userController.saveUser(data);
@@ -32,6 +36,23 @@ export default class MessageHandlers {
                 console.log('Handling operation :', operation);
                 response = await userController.loginWithGoogle(data);
                 break;
+            case 'get-user-deatils-for-post':
+                console.log('Handling operation : ', operation);
+                console.log(data);
+                response = await userController.fetchDataForPost(data);
+                break;
+            case 'get-userProfile':
+                console.log('Handling operation : ', operation);
+                response = await userController.getUserProfiler(data);
+                break;
+            case 'update-UserData':
+                console.log('Handling operation',operation);
+                response = await userController.updateUserProfile(data);
+                break;
+            case 'search_user':
+                console.log('Handling operation',operation);
+                response = await userController.searchUser(data);
+                break;
             case 'admin_login':
                 console.log('Handling operation', operation);
                 response = await AdminController.login(data)
@@ -44,6 +65,19 @@ export default class MessageHandlers {
                 console.log('Handling operation :', operation);
                 response = await AdminController.changeStatus(data);
                 break;
+            case 'get-user-deatils-for-post':
+                console.log('Handling operation : ', operation);
+                response = await userController.fetchDataForPost(data);
+                break;
+            case 'getNewUsers':
+                console.log('Handling operation : ', operation);
+                response = await AdminController.getNewUsers()
+                break;
+            case 'getTotalUsers':
+                console.log('Handling operation : ', operation);
+                response = await AdminController.getTotalUsers()
+                break;
+
             default:
                 response = { error: 'Operation not supported' };
                 break;

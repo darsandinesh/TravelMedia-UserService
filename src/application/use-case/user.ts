@@ -2,6 +2,8 @@ import { IUser } from "../../domain/entities/IUser";
 import { UserRepository } from "../../domain/repositories/userRepository";
 import { generateOtp } from "../../utils/generateOTP";
 import { sendOtpEmail } from "../../utils/emialVerification";
+import { IUserDetails, IUserPostDetails } from "../../domain/entities/IUserDeatils";
+import { fetchFileFromS3, uploadFileToS3 } from "../../infrastructure/s3/s3Actions";
 
 
 interface user {
@@ -33,6 +35,17 @@ export class UserService {
                 return { message: "Verify the otp to complete registration", success: true, otp, user_data: userData };
             }
 
+        } catch (error) {
+
+        }
+    }
+
+    async resendOtp(email: string): Promise<any> {
+        try {
+            console.log('resentotp in application use-case');
+            const otp = generateOtp();
+            await sendOtpEmail(email, otp);
+            return { message: 'otp resend successful', success: true, otp }
         } catch (error) {
 
         }
@@ -119,6 +132,75 @@ export class UserService {
                 throw new Error(`Error logging in with Google: ${error.message}`);
             }
             throw error;
+        }
+    }
+
+    async fetchUserDatasForPost(userId: string): Promise<{ success: boolean; message: string; data?: IUserPostDetails }> {
+        try {
+            console.log('2')
+            const result = await this.userRepo.findUserDetailsForPost(userId);
+            if (!result || !result.data) {
+                return { success: false, message: "No data foudn" };
+            }
+
+            return { success: true, message: "Data found", data: { id: result.data.id, name: result.data.name } };
+        } catch (error) {
+            console.error("Error fetching user data for post:", error);
+            throw new Error("Error occurred while fetching user data for post");
+        }
+    }
+
+    async getUserProfile(userId: string): Promise<{ success: boolean; message: string; data?: IUser }> {
+        try {
+            const userExist = await this.userRepo.getUserProfile(userId)
+            console.log(userExist);
+            if (!userExist) {
+                return { success: false, message: "Unable to find the user data" }
+            }
+            return { success: true, message: 'user data found successs', data: userExist }
+        } catch (error) {
+            console.log("Error fetching user data for profile : ", error);
+            throw new Error("Error fetching user data for profile")
+        }
+    }
+
+    async updateUserProfile(data: any): Promise<{ success: boolean; message: string; avatarUrl?: string }> {
+        try {
+            console.log(data, 'data in application user.ts');
+            let profile_pic: string = ''
+            if (data.image) {
+                const buffer = Buffer.isBuffer(data.image.buffer) ? data.image.buffer : Buffer.from(data.image.buffer);
+                const key = await uploadFileToS3(buffer, data.image.originalname);
+                profile_pic = await fetchFileFromS3(key, 604800);
+            }
+            console.log(profile_pic, '------------------')
+            data.image = profile_pic
+            const updateUser = await this.userRepo.updateUserProfile(data);
+            console.log(updateUser, '-----------')
+            if (!updateUser) {
+                console.log('if')
+                return { success: false, message: 'Profile is uptoDate' }
+            }
+            console.log('outside if')
+            return { success: true, message: 'updated success', avatarUrl: profile_pic };
+        } catch (error) {
+            console.log('Error in updateUserProfile in application user userService');
+            return { success: false, message: 'internal server error' };
+        }
+    }
+
+    async searchUser(search: string) {
+        try {
+            console.log(search, '-----------applicaiton usercase for search user')
+            const userData = await this.userRepo.findUsers(search);
+            console.log(userData);
+            if (!userData) {
+                return { success: false, message: 'No user found' }
+            }
+            return { success: true, message: 'userData found', data: userData }
+        } catch (error) {
+            console.log('Error in searchUser in application user userService');
+            return { success: false, message: 'Someting went wrong' }
         }
     }
 

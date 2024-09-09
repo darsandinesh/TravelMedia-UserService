@@ -21,6 +21,9 @@ const userSchema: Schema = new Schema({
     required: true,
     minlength: 6,
   },
+  location: {
+    type: String,
+  },
   profilePicture: {
     type: String,
     default: '',
@@ -33,11 +36,15 @@ const userSchema: Schema = new Schema({
     type: [String],
     default: [],
   },
+  likedPost: {
+    type: String,
+    default: []
+  },
   isAdmin: {
     type: Boolean,
     default: false,
   },
-  desc: {
+  bio: {
     type: String,
     maxlength: 50,
   },

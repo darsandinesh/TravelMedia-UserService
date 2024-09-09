@@ -41,6 +41,25 @@ class adminController {
 
         }
     }
+
+
+    async getNewUsers() {
+        try {
+            const result = await this.adminService.getNewUsers();
+            return result;
+        } catch (error) {
+            console.log('error in getNewUsers u')
+        }
+    }
+
+    async getTotalUsers() {
+        try {
+            const result = await this.adminService.getTotalUsers();
+            return result;
+        } catch (error) {
+            console.log('error in getNewUsers u')
+        }
+    }
 }
 
 export const AdminController = new adminController();

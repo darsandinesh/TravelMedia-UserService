@@ -52,8 +52,8 @@ export class AdminRepositoty {
             }
 
             // Toggle the isBlocked status
-            
-            
+
+
             const updated = await User.updateOne({ email: email }, { $set: { isBlocked: isBlocked } });
             console.log('Matched:', updated.matchedCount, 'Modified:', updated.modifiedCount);
             if (updated.modifiedCount == 1) {
@@ -67,6 +67,29 @@ export class AdminRepositoty {
             console.error("Error user status change admin:", error);
             const err = error as Error;
             return { success: false, message: `Error updating user status: ${err.message}` };
+        }
+    }
+
+    async getNewUsers() {
+        try {
+            const userData = await User.find({}).sort({ _id: -1 }).limit(5);
+            console.log(userData);
+            return userData
+        } catch (error) {
+            console.log("Error in getNewUsers in adminRepo : ", error);
+            const err = error as Error;
+            return { success: false, messsage: err.message };
+        }
+    }
+
+    async getTotalUsers() {
+        try {
+            const userData = await User.find().countDocuments()
+            return userData;
+        } catch (error) {
+            console.log("Error in getTotalUsers in adminRepo : ", error);
+            const err = error as Error;
+            return { success: false, messsage: err.message };
         }
     }
 
