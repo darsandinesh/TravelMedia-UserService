@@ -142,8 +142,8 @@ export class UserService {
             if (!result || !result.data) {
                 return { success: false, message: "No data foudn" };
             }
-
-            return { success: true, message: "Data found", data: { id: result.data.id, name: result.data.name } };
+            console.log(result, 'hia hello')
+            return { success: true, message: "Data found", data: { id: result.data.id, name: result.data.name, avatar: result.data.avatar } };
         } catch (error) {
             console.error("Error fetching user data for post:", error);
             throw new Error("Error occurred while fetching user data for post");
@@ -201,6 +201,44 @@ export class UserService {
         } catch (error) {
             console.log('Error in searchUser in application user userService');
             return { success: false, message: 'Someting went wrong' }
+        }
+    }
+
+    async followUser(data: { loggeduser: string, followedId: string }) {
+        try {
+            const follow = await this.userRepo.followUser(data);
+            if (!follow) {
+                return { success: false, message: 'unable to follow' }
+            }
+            return { success: true, message: 'user followed success' }
+        } catch (error) {
+            console.log('Error in followUser in application user userService');
+            return { success: false, message: 'Someting went wrong' }
+        }
+    }
+
+    async unfollowUser(data: { loggeduser: string, followedId: string }) {
+        try {
+            const follow = await this.userRepo.unfollowUser(data);
+            if (!follow) {
+                return { success: false, message: 'unable to unfollow' }
+            }
+
+            console.log(follow);
+            return follow
+            // return { success: true, message: 'user unfollowed success' }
+        } catch (error) {
+            console.log('Error in followUser in application user userService');
+            return { success: false, message: 'Someting went wrong' }
+        }
+    }
+
+    async getFriends(userId: string) {
+        try {
+            const data = await this.userRepo.getFriends(userId);
+            return data
+        } catch (error) {
+
         }
     }
 

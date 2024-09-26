@@ -46,13 +46,29 @@ export default class MessageHandlers {
                 response = await userController.getUserProfiler(data);
                 break;
             case 'update-UserData':
-                console.log('Handling operation',operation);
+                console.log('Handling operation', operation);
                 response = await userController.updateUserProfile(data);
                 break;
             case 'search_user':
-                console.log('Handling operation',operation);
+                console.log('Handling operation', operation);
                 response = await userController.searchUser(data);
                 break;
+
+            // follow and unfollow user
+            case 'folloUser':
+                console.log('Handling operaion ', operation);
+                response = await userController.followUser(data);
+                break;
+            case 'unfolloUser':
+                console.log('Handling operaion ', operation);
+                response = await userController.unfollowUser(data);
+                break;
+
+            case 'getFriends':
+                console.log('Handling operation ', operation);
+                response = await userController.getFriends(data);
+                break;
+            // admin side code 
             case 'admin_login':
                 console.log('Handling operation', operation);
                 response = await AdminController.login(data)

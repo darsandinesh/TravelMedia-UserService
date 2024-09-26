@@ -28,16 +28,16 @@ const userSchema: Schema = new Schema({
     type: String,
     default: '',
   },
-  followers: {
-    type: [String],
-    default: [],
-  },
-  followings: {
-    type: [String],
-    default: [],
-  },
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  followings: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   likedPost: {
-    type: String,
+    type: Array,
     default: []
   },
   isAdmin: {

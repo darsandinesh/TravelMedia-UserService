@@ -2,12 +2,14 @@ import { IUser } from "../entities/IUser";
 import bcrypt from 'bcrypt';
 import { IUserDocument, User } from '../../model/userModel'
 import { IUserDetails, IUserPostDetails } from "../entities/IUserDeatils";
+import { userController } from "../../interface/controller/userController";
 
 export class UserRepository {
 
     async findEmail(email: string): Promise<IUser | null> {
         try {
             const user = await User.findOne({ email: email }).select('-password');
+            console.log(user, '----in reop find email')
             return user
         } catch (error) {
             const err = error as Error;
@@ -53,23 +55,115 @@ export class UserRepository {
         }
     }
 
-    async findUsers(search:string){
-        try{
-            const name = RegExp(search,"i");
-            console.log(name,'----------name')
-            const user = await User.find({
-                "$or":[
-                    {name:name},
-                    {email:name}
-                ]
+    async findUsers(search: string) {
+        try {
+            const name = RegExp(search, "i");
+            console.log(name, '----------name');
+
+            const users = await User.find({
+                "$or": [
+                    { name: name },
+                    { email: name }
+                ],
+                isAdmin: false  // Add this condition to exclude admin users
             }).select('-password');
-            console.log(user,'-----------=-=-=')
-            return user
-        }catch(error){
-            console.log('Error in findUsers in the userRepo')
+
+            console.log(users, '-----------=-=-=');
+            return users;
+        } catch (error) {
+            console.log('Error in findUsers in the userRepo', error);
+            throw error;  // Optionally throw the error to handle it in higher-level functions
         }
     }
 
+
+    async followUser(data: { loggeduser: string, followedId: string }) {
+        try {
+            console.log("Logged User:", data.loggeduser);
+            console.log("Other User to Follow:", data.followedId);
+
+            if (!data.loggeduser || !data.followedId) {
+                return false;
+            }
+
+            const user = await User.updateOne(
+                { _id: data.loggeduser },
+                { $addToSet: { followings: data.followedId } }
+            );
+
+            const u = await User.updateOne(
+                { _id: data.followedId },
+                { $addToSet: { followers: data.loggeduser } }
+            )
+
+            console.log("Update Result:", user);
+            return user;
+        } catch (error) {
+            console.log("Error in follow user in userRepo", error);
+        }
+    }
+
+
+    async unfollowUser(data: { loggeduser: string, followedId: string }) {
+        try {
+
+            if (!data.loggeduser || !data.followedId) {
+                return false;
+            }
+
+            const user = await User.updateOne(
+                { _id: data.loggeduser },
+                { $pull: { followings: data.followedId } }
+            );
+
+            const u = await User.updateOne(
+                { _id: data.followedId },
+                { $pull: { followers: data.loggeduser } }
+            )
+
+            console.log("Update Result:", user);
+            return user;
+        } catch (error) {
+            console.log("Error in follow user in userRepo", error);
+        }
+    }
+
+    async getFriends(id: string) {
+        try {
+            const userFound = await User.findById(id);
+            if (!userFound) {
+                return { success: true, message: 'No users found' };
+            }
+
+            let followersDetails
+
+            if (userFound.followers) {
+                followersDetails = await Promise.all(
+                    userFound.followers.map((followerId: string) =>
+                        User.findById(followerId).select('name email profilePicture')
+                    )
+                );
+            }
+
+            let followingsDetails
+
+            if (userFound.followings) {
+                followingsDetails = await Promise.all(
+                    userFound.followings.map((followingId: string) =>
+                        User.findById(followingId).select('name email profilePicture')
+                    )
+                );
+            }
+
+            console.log(followingsDetails);
+            console.log(followersDetails)
+
+            return { success: true, message: 'data found', data: { followers: followersDetails, following: followingsDetails } }
+
+        } catch (error) {
+            console.log('Error in the getFriends -->', error);
+        }
+    }
 
 
     async saveUser(data: IUser): Promise<IUser> {
@@ -159,7 +253,8 @@ export class UserRepository {
 
             const datas: IUserPostDetails = {
                 id: userId,
-                name: user.name
+                name: user.name,
+                avatar: user.profilePicture
             };
 
             return { success: true, message: "Data found", data: datas };

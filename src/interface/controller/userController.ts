@@ -147,6 +147,36 @@ class UserController {
         }
     }
 
+    async followUser(data: { loggeduser: string, followedId: string }) {
+        try {
+            console.log(data);
+            const result = await this.userService.followUser(data);
+            return result;
+        } catch (error) {
+            console.log('Error in the follow usercontroller ', error);
+        }
+    }
+
+    async unfollowUser(data: { loggeduser: string, followedId: string }) {
+        try {
+            console.log(data);
+            const result = await this.userService.unfollowUser(data);
+            return result;
+        } catch (error) {
+            console.log('Error in the follow usercontroller ', error);
+        }
+    }
+
+    async getFriends(userId: string) {
+        try {
+            console.log(userId,'id of the user ');
+            const result = await this.userService.getFriends(userId);
+            return result;
+        } catch (error) {
+            console.log('Error in the getFriends userController -->', error);
+        }
+    }
+
 
 
 }

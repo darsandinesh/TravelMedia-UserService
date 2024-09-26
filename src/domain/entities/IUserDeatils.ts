@@ -14,6 +14,7 @@ export interface IUserInfo {
 export interface IUserPostDetails {
     id: string;
     name?: string
+    avatar?:string
     // avatar?: {
     //     imageUrl: string;
     //     originalname: string
