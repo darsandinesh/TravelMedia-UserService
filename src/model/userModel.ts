@@ -52,6 +52,10 @@ const userSchema: Schema = new Schema({
     type: Boolean,
     default: false
   },
+  isPrivate:{
+    type:Boolean,
+    default:false
+  },
   created_at: {
     type: Date,
     required: true,

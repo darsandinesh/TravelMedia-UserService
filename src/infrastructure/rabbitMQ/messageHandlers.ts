@@ -49,6 +49,10 @@ export default class MessageHandlers {
                 console.log('Handling operation', operation);
                 response = await userController.updateUserProfile(data);
                 break;
+            case 'changeVisibility':
+                console.log('Handling operation',operation);
+                response = await userController.changeVisibility(data);
+                break;
             case 'search_user':
                 console.log('Handling operation', operation);
                 response = await userController.searchUser(data);

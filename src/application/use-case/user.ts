@@ -189,6 +189,21 @@ export class UserService {
         }
     }
 
+
+    async changeVisibility(data: { isPrivate: boolean, userId: string }) {
+        try {
+            const result:any = await this.userRepo.changeVisibility(data);
+            console.log(result);
+            if (result?.modifiedCount == 0) {
+                return { success: false, message: 'Unable to change the status' };
+            }
+            return { success: true, message: 'Account status changed' }
+        } catch (error) {
+            console.log('Error in updateUserProfile in application user userService');
+            return { success: false, message: 'internal server error' };
+        }
+    }
+
     async searchUser(search: string) {
         try {
             console.log(search, '-----------applicaiton usercase for search user')

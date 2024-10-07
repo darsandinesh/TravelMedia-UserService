@@ -1,5 +1,6 @@
 import { IUser } from "../entities/IUser";
 import bcrypt from 'bcrypt';
+const { ObjectId } = require('mongodb');
 import { IUserDocument, User } from '../../model/userModel'
 import { IUserDetails, IUserPostDetails } from "../entities/IUserDeatils";
 import { userController } from "../../interface/controller/userController";
@@ -49,6 +50,22 @@ export class UserRepository {
                 console.log('No changes were made to the document.');
                 return null;
             }
+        } catch (error) {
+            console.error('Error updating user profile:', error);
+            return null;
+        }
+    }
+
+    async changeVisibility(data: { isPrivate: boolean, userId: string }) {
+        try {
+            console.log(data)
+            const update = await User.updateOne(
+                { _id: data.userId }, 
+                { $set: { isPrivate: data.isPrivate } }
+            );
+            console.log(update,'cahnge vissssss');
+            return update
+
         } catch (error) {
             console.error('Error updating user profile:', error);
             return null;

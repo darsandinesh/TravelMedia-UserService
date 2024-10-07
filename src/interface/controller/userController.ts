@@ -136,6 +136,16 @@ class UserController {
         }
     }
 
+    async changeVisibility(data: { isPrivate: boolean, userId: string }) {
+        try {
+            console.log(data);
+            const result = await this.userService.changeVisibility(data);
+            return result;
+        } catch (error) {
+            console.log('Error in the changeVisibility userControler userService -->', error)
+        }
+    }
+
     async searchUser(search: string) {
         try {
             console.log(search);
@@ -169,7 +179,7 @@ class UserController {
 
     async getFriends(userId: string) {
         try {
-            console.log(userId,'id of the user ');
+            console.log(userId, 'id of the user ');
             const result = await this.userService.getFriends(userId);
             return result;
         } catch (error) {
