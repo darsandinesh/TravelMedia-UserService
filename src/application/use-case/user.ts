@@ -192,7 +192,7 @@ export class UserService {
 
     async changeVisibility(data: { isPrivate: boolean, userId: string }) {
         try {
-            const result:any = await this.userRepo.changeVisibility(data);
+            const result: any = await this.userRepo.changeVisibility(data);
             console.log(result);
             if (result?.modifiedCount == 0) {
                 return { success: false, message: 'Unable to change the status' };
@@ -254,6 +254,16 @@ export class UserService {
             return data
         } catch (error) {
 
+        }
+    }
+
+    async savePost(data: { userId: string, postId: string }) {
+        try {
+            const result = await this.userRepo.savePost(data);
+            return result;
+        } catch (error) {
+            console.log('Error in savePost in application user userService');
+            return { success: false, message: 'Someting went wrong' }
         }
     }
 

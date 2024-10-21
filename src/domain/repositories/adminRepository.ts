@@ -1,4 +1,4 @@
-import bcrtpt from 'bcrypt';
+import bcrtpt from 'bcryptjs';
 import { User } from '../../model/userModel';
 import { IUser } from '../entities/IUser';
 
@@ -88,6 +88,41 @@ export class AdminRepositoty {
             return userData;
         } catch (error) {
             console.log("Error in getTotalUsers in adminRepo : ", error);
+            const err = error as Error;
+            return { success: false, messsage: err.message };
+        }
+    }
+
+    async getUserData() {
+        try {
+            const totalRevenue = await User.aggregate([
+                { $match: { isMember: true } },
+                { $group: { _id: null, totalRevenue: { $sum: "$membership.amount" } } }
+            ]);
+            const totalUsers = await User.countDocuments();
+            const primeUsers = await User.countDocuments({ isMember: true });
+            const normalUsers = totalUsers - primeUsers;
+            const prime = await User.find({ isMember: true }).select('membership');
+            const data = {
+                totalRevenue,
+                primeUsers,
+                normalUsers,
+                prime
+            }
+            return data;
+        } catch (error) {
+            console.log("Error in getTotalUsers in adminRepo : ", error);
+            const err = error as Error;
+            return { success: false, messsage: err.message };
+        }
+    }
+
+    async getUser(id:string){
+        try {
+            const data = await User.findOne({_id:id}).select('-password'); 
+            return data
+        } catch (error) {
+            console.log("Error in getUser in adminRepo : ", error);
             const err = error as Error;
             return { success: false, messsage: err.message };
         }

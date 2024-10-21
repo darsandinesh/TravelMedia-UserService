@@ -50,7 +50,7 @@ export default class MessageHandlers {
                 response = await userController.updateUserProfile(data);
                 break;
             case 'changeVisibility':
-                console.log('Handling operation',operation);
+                console.log('Handling operation', operation);
                 response = await userController.changeVisibility(data);
                 break;
             case 'search_user':
@@ -72,6 +72,19 @@ export default class MessageHandlers {
                 console.log('Handling operation ', operation);
                 response = await userController.getFriends(data);
                 break;
+            case 'savePost':
+                console.log("Handling operation :", operation);
+                response = await userController.savePost(data);
+                break;
+            case 'membership':
+                console.log('Handling operation : ', operation);
+                response = await userController.membership(data);
+                break;
+            case 'savePayment':
+                console.log('Handling operation :', operation);
+                response = await userController.savePayment(data);
+                break;
+
             // admin side code 
             case 'admin_login':
                 console.log('Handling operation', operation);
@@ -97,6 +110,14 @@ export default class MessageHandlers {
                 console.log('Handling operation : ', operation);
                 response = await AdminController.getTotalUsers()
                 break;
+            case 'getAllUser':
+                console.log('Handling operation :', operation);
+                response = await AdminController.getUserData();
+                break;
+            case 'sendMsg':
+                console.log('Handling operation : ',operation);
+                response = await AdminController.sendMsg(data);
+                break
 
             default:
                 response = { error: 'Operation not supported' };

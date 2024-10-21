@@ -1,5 +1,5 @@
 import { IUser } from "../entities/IUser";
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 const { ObjectId } = require('mongodb');
 import { IUserDocument, User } from '../../model/userModel'
 import { IUserDetails, IUserPostDetails } from "../entities/IUserDeatils";
@@ -60,10 +60,10 @@ export class UserRepository {
         try {
             console.log(data)
             const update = await User.updateOne(
-                { _id: data.userId }, 
+                { _id: data.userId },
                 { $set: { isPrivate: data.isPrivate } }
             );
-            console.log(update,'cahnge vissssss');
+            console.log(update, 'cahnge vissssss');
             return update
 
         } catch (error) {
@@ -281,6 +281,51 @@ export class UserRepository {
         }
     }
 
+    async savePost(data: { userId: string, postId: string }) {
+        try {
+            const result = await User.updateOne({ _id: data.userId }, { $addToSet: { savedPosts: data.postId } })
+            if (result.modifiedCount == 0) {
+                return { success: true, message: 'Post saved successful' }
+            }
+            return { success: false, message: 'Unable to save post' }
+
+        } catch (error) {
+            console.error("Error fetching user data", error);
+            return { success: false, message: `Error saving post data: ${(error as Error).message}` };
+        }
+    }
+
+    // saving the membership data for the user
+
+    async saveMembership(data: { userId: string, amount: string }) {
+        try {
+            
+            const price = Number(data.amount);
+            const update = await User.updateOne(
+                { _id: data.userId },
+                {
+                    $set: {
+                        isMember: true,
+                        'membership.amount': price,
+                        'membership.startDate': new Date(),
+                        'paymentStatus': 'completed', 
+                    }
+                }
+            );
+
+            console.log(update);
+
+            if (update.modifiedCount == 1) {
+                return { success: true, message: 'Membership updated successfully' };
+            }
+
+            return { success: false, message: 'Membership update failed' };
+
+        } catch (error) {
+            console.error("Error saving membership data", error);
+            return { success: false, message: `Error saving membership data: ${(error as Error).message}` };
+        }
+    }
 
 
 

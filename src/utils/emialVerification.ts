@@ -14,6 +14,43 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+export const postRemove = async (to: string): Promise<void> => {
+    const mailOptions = {
+        from: config.EMAIL,
+        to,
+        subject: "Post Removal Notification",
+        text: "Your post has been removed from the application due to user reports.",
+        html: `
+        <div style="font-family: Arial, sans-serif; text-align: center;">
+            <div style="background-color: #f7f7f7; padding: 20px;">
+                <img src="data:image/png;base64,${logoBase64}" alt="Travel Media" style="width: 250px; height: auto;">
+            </div>
+            <div style="padding: 20px;">
+                <h1 style="color: #333;">Post Removal Notification</h1>
+                <p style="font-size: 16px; color: #555;">Dear user,</p>
+                <p style="font-size: 16px; color: #555;">We regret to inform you that your post has been removed from our application.</p>
+                <p style="font-size: 16px; color: #555;">Reason: Your post received reports from other users.</p>
+                <p style="font-size: 16px; color: #555;">If you believe this action was taken in error, please contact our support team.</p>
+                <p style="font-size: 16px; color: #555;">Thank you for your understanding,</p>
+                <p style="font-size: 16px; color: #555;">Travel Media</p>
+            </div>
+            <div style="background-color: #f7f7f7; padding: 20px;">
+                <p style="font-size: 14px; color: #999;">&copy; 2024 Your Company. All rights reserved.</p>
+                <p style="font-size: 14px; color: #999;"><a href="mailto:darsandinesh100@gmail.com" style="color: #0073e6;">darsandinesh100@gmail.com</a></p>
+            </div>
+        </div>`,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log("Mail sent to ", to);
+    } catch (error) {
+        console.error("Error sending email", error);
+        throw new Error("Failed to send post removal email");
+    }
+}
+
+
 export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
     const mailOptions = {
         from: config.EMAIL,

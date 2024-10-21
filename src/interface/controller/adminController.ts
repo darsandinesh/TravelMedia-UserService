@@ -60,6 +60,24 @@ class adminController {
             console.log('error in getNewUsers u')
         }
     }
+
+    async getUserData() {
+        try {
+            const result = await this.adminService.getUserData();
+            return result;
+        } catch (error) {
+            console.log('error in the getUserData in adminController -- > ', error);
+        }
+    }
+
+    async sendMsg(id:string){
+        try {
+            const result = await this.adminService.sendMsg(id);
+            return result
+        } catch (error) {
+            console.log('error in the getUserData in adminController -- > ', error);
+        }
+    }
 }
 
 export const AdminController = new adminController();

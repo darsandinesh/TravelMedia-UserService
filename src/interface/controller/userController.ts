@@ -1,12 +1,15 @@
 import { UserService } from "../../application/use-case/user";
+import { PaymentService } from "../../application/use-case/payment";
 import { IUserPostDetails } from "../../domain/entities/IUserDeatils";
 
 class UserController {
 
     private userService: UserService;
+    private paymentService: PaymentService;
 
     constructor() {
         this.userService = new UserService();
+        this.paymentService = new PaymentService();
     }
 
     async registerUser(data: any) {
@@ -187,6 +190,35 @@ class UserController {
         }
     }
 
+    async savePost(data: { userId: string, postId: string }) {
+        try {
+            console.log(data.postId, '--------id of the post', data.userId);
+            const result = await this.userService.savePost(data);
+            return result;
+        } catch (error) {
+            console.log('Error in savePost in userControler -->', error)
+        }
+    }
+
+    async membership(id: string) {
+        try {
+            const result = await this.paymentService.createStripeSession(id);
+            return result;
+        } catch (error) {
+
+        }
+    }
+
+    async savePayment(sessionId: string) {
+        try {
+            console.log(sessionId);
+            const result = await this.paymentService.orderSuccess(sessionId)
+            return result;
+
+        } catch (error) {
+            console.log('Error in the savePayment in -->', error);
+        }
+    }
 
 
 }
