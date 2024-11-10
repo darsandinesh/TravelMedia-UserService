@@ -50,10 +50,6 @@ export class AdminRepositoty {
             if (!userData) {
                 return { success: false, message: 'User not found' };
             }
-
-            // Toggle the isBlocked status
-
-
             const updated = await User.updateOne({ email: email }, { $set: { isBlocked: isBlocked } });
             console.log('Matched:', updated.matchedCount, 'Modified:', updated.modifiedCount);
             if (updated.modifiedCount == 1) {
@@ -61,7 +57,6 @@ export class AdminRepositoty {
             } else {
                 return { success: false, message: 'Something went wrong. Try again later' };
             }
-
 
         } catch (error) {
             console.error("Error user status change admin:", error);

@@ -59,11 +59,6 @@ class UserController {
             console.log(data);
             const result = await this.userService.verifyEmail(data.email);
             return result;
-            // const user_data = {
-            //     email: data.email,
-            //     otp: '1234'
-            // }
-            // return { success: true, message: 'Otp is send to the Email', user_data }
         } catch (error) {
             console.log('error in the verifyEmail -->', error);
         }

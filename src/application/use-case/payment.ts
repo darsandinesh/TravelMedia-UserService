@@ -40,8 +40,8 @@ export class PaymentService {
                     },
                 ],
                 mode: 'payment',
-                success_url: `http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `http://localhost:5173`,
+                success_url: `https://travelmedia.cyou/success?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `https://travelmedia.cyou`,
                 metadata: {
                     userId: id,
                     amount: 199,
@@ -64,10 +64,7 @@ export class PaymentService {
     async orderSuccess(sessionId: string) {
         try {
 
-            console.log(sessionId, '-----------id for the session');
             const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-            console.log(session,'---------------session');
 
             if (session.payment_status === 'paid') {
                 if (!session.metadata?.userId ) {
