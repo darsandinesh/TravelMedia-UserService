@@ -1,6 +1,13 @@
 import { UserService } from "../../application/use-case/user";
 import { PaymentService } from "../../application/use-case/payment";
 import { IUserPostDetails } from "../../domain/entities/IUserDeatils";
+import { IUser, UpdateUserProfileData } from "../../domain/entities/IUser";
+import * as grpc from '@grpc/grpc-js';
+
+interface user {
+    email: string,
+    password: string
+}
 
 class UserController {
 
@@ -12,7 +19,7 @@ class UserController {
         this.paymentService = new PaymentService();
     }
 
-    async registerUser(data: any) {
+    async registerUser(data: IUser) {
         try {
 
             const result = await this.userService.registerUser(data);
@@ -20,6 +27,16 @@ class UserController {
 
         } catch (error) {
             console.log('error in the registerUser userController -->', error);
+        }
+    }
+
+    async grpcregisterUser(
+        call: grpc.ServerUnaryCall<IUser, IUser>,
+        callback: grpc.sendUnaryData<{ success: boolean, message: string, otp?: string, user_data?: IUser }>) {
+        try {
+            await this.userService.grpcregisterUser(call.request, callback)
+        } catch (error) {
+
         }
     }
 
@@ -32,7 +49,7 @@ class UserController {
         }
     }
 
-    async saveUser(data: any) {
+    async saveUser(data: IUser) {
         try {
 
             const userData = await this.userService.save(data);
@@ -43,18 +60,19 @@ class UserController {
         }
     }
 
-    async loginUser(data: any) {
+    async loginUser(
+        call: grpc.ServerUnaryCall<user, IUser>,
+        callback: grpc.sendUnaryData<{ user_data?: IUser }>) {
         try {
-            console.log(data, '---------------------------');
-            const result = await this.userService.loginUser(data);
-            console.log('loginuser-----------------usercontroleler', result)
-            return result;
+            const { email, password } = call.request;
+            console.log(email, password, 'grpc request')
+            await this.userService.loginUser({ email, password }, callback)
         } catch (error) {
             console.log('error in the registerUser userController -->', error);
         }
     }
 
-    async verifyEmail(data: any) {
+    async verifyEmail(data: { email: string }) {
         try {
             console.log(data);
             const result = await this.userService.verifyEmail(data.email);
@@ -64,7 +82,7 @@ class UserController {
         }
     }
 
-    async resetPassword(data: any) {
+    async resetPassword(data: { email: string, newPassword: string }) {
         try {
             console.log(data);
             const result = await this.userService.resetPassword(data.email, data.newPassword);
@@ -74,7 +92,7 @@ class UserController {
         }
     }
 
-    async loginWithGoogle(data: any) {
+    async loginWithGoogle(data: { email: string, fullname: string }) {
         try {
             console.log(data);
             const result = await this.userService.loginWithGoogle(data);
@@ -123,7 +141,7 @@ class UserController {
         }
     }
 
-    async updateUserProfile(data: any) {
+    async updateUserProfile(data: UpdateUserProfileData) {
         try {
             console.log(data);
             const result = await this.userService.updateUserProfile(data);

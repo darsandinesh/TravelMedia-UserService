@@ -20,10 +20,6 @@ export default class MessageHandlers {
                 console.log('Handling user save');
                 response = await userController.saveUser(data);
                 break;
-            case 'user_login':
-                console.log('Handling operation :', operation);
-                response = await userController.loginUser(data);
-                break;
             case 'verify_Email':
                 console.log('Handling operation : ', operation);
                 response = await userController.verifyEmail(data);

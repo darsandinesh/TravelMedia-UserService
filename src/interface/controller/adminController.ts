@@ -11,10 +11,8 @@ class adminController {
         this.adminService = new AdminService();
     }
 
-    async login(data: any) {
+    async login(data: { email: string, password: string }) {
         try {
-            // const email = data.email;
-            // const password = data.password;
             const result = await this.adminService.adminLogin(data);
             return result;
         } catch (error) {
@@ -70,7 +68,7 @@ class adminController {
         }
     }
 
-    async sendMsg(id:string){
+    async sendMsg(id: string) {
         try {
             const result = await this.adminService.sendMsg(id);
             return result

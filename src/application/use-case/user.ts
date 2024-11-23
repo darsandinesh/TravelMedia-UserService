@@ -1,9 +1,11 @@
-import { IUser } from "../../domain/entities/IUser";
+import { IUser, UpdateUserProfileData, ValidationErrors } from "../../domain/entities/IUser";
 import { UserRepository } from "../../domain/repositories/userRepository";
 import { generateOtp } from "../../utils/generateOTP";
 import { sendOtpEmail } from "../../utils/emialVerification";
 import { IUserDetails, IUserPostDetails } from "../../domain/entities/IUserDeatils";
 import { fetchFileFromS3, uploadFileToS3 } from "../../infrastructure/s3/s3Actions";
+import bcrypt from 'bcryptjs'
+import * as grpc from '@grpc/grpc-js'
 
 
 interface user {
@@ -19,39 +21,109 @@ export class UserService {
         this.userRepo = new UserRepository();
     }
 
-    async registerUser(userData: IUser): Promise<any> {
+    validateUserData(userData: IUser): ValidationErrors {
+        let errors: ValidationErrors = {};
+
+        if (!userData.name || userData.name.trim().length === 0) {
+            errors.name = "Name is required";
+        }
+
+        if (!userData.email || !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(userData.email)) {
+            errors.email = "Valid email is required";
+        }
+
+        if (!userData.phone || !/^\d{10}$/.test(userData.phone)) {
+            errors.number = "Valid phone number is required (10 digits)";
+        }
+
+        if (!userData.password) {
+            errors.password = "Password is required";
+        } else if (userData.password.length < 6) {
+            errors.password = "Password should be at least 6 characters";
+        } else if (!/[A-Z]/.test(userData.password)) {
+            errors.password = "Password must contain at least one uppercase letter";
+        } else if (!/[0-9]/.test(userData.password)) {
+            errors.password = "Password must contain at least one number";
+        } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(userData.password)) {
+            errors.password = "Password must contain at least one special character";
+        }
+
+        return errors;
+    }
+
+    async registerUser(userData: IUser): Promise<{ success: boolean, message: string, otp?: string, user_data?: IUser }> {
         try {
+
+            const errors = this.validateUserData(userData);
+
+            if (Object.keys(errors).length > 0) {
+                return { success: false, message: "Validation errors" };
+            }
+
             const existingUser = await this.userRepo.findEmail(userData.email);
-            console.log(existingUser, 'user found');
 
             if (existingUser) {
                 return { success: false, message: "Email already exists" };
             } else {
                 const otp = generateOtp();
-                console.log("this is generated otp", otp);
-                console.log(userData)
                 await sendOtpEmail(userData.email, otp);
 
                 return { message: "Verify the otp to complete registration", success: true, otp, user_data: userData };
             }
 
         } catch (error) {
-
+            return { success: false, message: 'Internal Server Error' }
         }
     }
 
-    async resendOtp(email: string): Promise<any> {
+    async grpcregisterUser(data: IUser, callback: grpc.sendUnaryData<{ success: boolean, message: string, otp?: string, user_data?: IUser }>): Promise<void> {
+        try {
+            console.log(data,'-----------grpc data in the contoller')
+            const errors = this.validateUserData(data);
+            console.log(errors);
+            if(Object.keys(errors).length>0){
+                return callback(null,{
+                    success:false,
+                    message:'Invalid Datas try again!!!'
+                })
+            }
+
+            const existingUser = await this.userRepo.findEmail(data.email);
+            if(existingUser){
+                return callback(null,{
+                    success:false,
+                    message:"Email address already exists"
+                })
+            }else{
+                const otp =generateOtp();
+                await sendOtpEmail(data.email,otp);
+                return callback(null,{
+                    success:true,
+                    message:"verify the otp to complete registration",
+                    otp,
+                    user_data:data
+                })
+            }
+        } catch (error) {
+            return callback(null, {
+                success: false,
+                message: "Internal Server Error"
+            })
+        }
+    }
+
+    async resendOtp(email: string): Promise<{ success: boolean, message: string, otp?: string }> {
         try {
             console.log('resentotp in application use-case');
             const otp = generateOtp();
             await sendOtpEmail(email, otp);
             return { message: 'otp resend successful', success: true, otp }
         } catch (error) {
-
+            return { success: false, message: "Internal Server Error" }
         }
     }
 
-    async save(userData: IUser): Promise<any> {
+    async save(userData: IUser): Promise<{ success: boolean, message: string, user_data?: IUser }> {
         try {
             console.log(userData, '------------------------------------------------userService')
             const result = await this.userRepo.saveUser(userData);
@@ -59,24 +131,51 @@ export class UserService {
                 return { success: true, message: 'Account created successfully', user_data: result };
             }
             else {
-                return { success: false, messgea: 'someting went worng try again later' };
+                return { success: false, message: 'someting went worng try again later' };
             }
         } catch (error) {
-
+            return { success: false, message: 'Internal Server Error' }
         }
     }
 
-    async loginUser(data: user): Promise<any> {
+    async loginUser({ email, password }: { email: string, password: string }, callback: grpc.sendUnaryData<{ success: boolean, message: string, user_data?: IUser }>): Promise<void> {
         try {
-            console.log(data, '------------------------------loginUser in userService');
-            const result = await this.userRepo.checkUser(data.email, data.password);
-            return result;
-        } catch (error) {
+            const userData = await this.userRepo.check(email);
+            if (!userData) {
+                return callback(null, {
+                    success: false,
+                    message: "Incorrect Email Address or Password"
+                });
+            }
+            const passwordMatch = await bcrypt.compare(password, userData.password);
+            if (!passwordMatch) {
+                return callback(null, {
+                    success: false,
+                    message: "Incorrect Email Address or Password"
+                })
+            }
+            if (userData.isBlocked) {
+                return callback(null, {
+                    success: false,
+                    message: 'You have been blocked by the admin'
+                })
+            }
+            delete (userData as Partial<typeof userData>).password;
 
+            return callback(null, {
+                success: true,
+                message: 'Logged in Successful',
+                user_data: userData
+            })
+        } catch (error) {
+            return callback(null, {
+                success: false,
+                message: 'Internal Server Error'
+            })
         }
     }
 
-    async verifyEmail(email: string): Promise<any> {
+    async verifyEmail(email: string): Promise<{ success: boolean, message: string, user_data?: { email: string, otp: string } }> {
         try {
             const user = await this.userRepo.findEmail(email);
             console.log(user, 'user service in email verification');
@@ -92,21 +191,21 @@ export class UserService {
                 return { success: false, message: 'No user found, Register first' };
             }
         } catch (error) {
-
+            return { success: false, message: 'Internal Server Error' }
         }
     }
 
-    async resetPassword(email: string, password: string): Promise<any> {
+    async resetPassword(email: string, password: string): Promise<{ success: boolean, message: string }> {
         try {
             let user = await this.userRepo.resetPassword(email, password);
             console.log(user);
             return user;
         } catch (error) {
-
+            return { success: false, message: 'Internal Server Error' }
         }
     }
 
-    async loginWithGoogle(data: any): Promise<any> {
+    async loginWithGoogle(data: { email: string, fullname: string }): Promise<{ success: boolean, message: string, user_data?: IUser }> {
         try {
             const email = data.email;
             const name = data.fullname;
@@ -118,12 +217,9 @@ export class UserService {
                     password: 'defaultpassword',
                 } as IUser)
             }
-            console.log(user.isBlocked);
             if (user.isBlocked) {
-                console.log('isblocked----------------if')
                 return { success: false, message: 'You have been blocked by the admin', user_data: user };
             } else {
-                console.log('isblocked----------------else')
                 return { success: true, message: 'Logged in successful', user_data: user };
             }
 
@@ -164,35 +260,35 @@ export class UserService {
         }
     }
 
-    async updateUserProfile(data: any): Promise<{ success: boolean; message: string; avatarUrl?: string }> {
+    async updateUserProfile(data: UpdateUserProfileData): Promise<{ success: boolean; message: string; avatarUrl?: string }> {
         try {
-            console.log(data, 'data in application user.ts');
-            let profile_pic: string = ''
+
+            let profile_pic = '';
             if (data.image) {
                 const buffer = Buffer.isBuffer(data.image.buffer) ? data.image.buffer : Buffer.from(data.image.buffer);
                 const key = await uploadFileToS3(buffer, data.image.originalname);
                 profile_pic = await fetchFileFromS3(key, 604800);
             }
-            console.log(profile_pic, '------------------')
-            data.image = profile_pic
+
+            data.profilePicture = profile_pic;
+
             const updateUser = await this.userRepo.updateUserProfile(data);
-            console.log(updateUser, '-----------')
+
             if (!updateUser) {
-                console.log('if')
-                return { success: false, message: 'Profile is uptoDate' }
+                return { success: false, message: 'Profile is up to date' };
             }
-            console.log('outside if')
-            return { success: true, message: 'updated success', avatarUrl: profile_pic };
+
+            return { success: true, message: 'Updated successfully', avatarUrl: profile_pic };
         } catch (error) {
             console.log('Error in updateUserProfile in application user userService');
-            return { success: false, message: 'internal server error' };
+            return { success: false, message: 'Internal server error' };
         }
     }
-
 
     async changeVisibility(data: { isPrivate: boolean, userId: string }) {
         try {
             const result: any = await this.userRepo.changeVisibility(data);
+
             console.log(result);
             if (result?.modifiedCount == 0) {
                 return { success: false, message: 'Unable to change the status' };
@@ -238,10 +334,7 @@ export class UserService {
             if (!follow) {
                 return { success: false, message: 'unable to unfollow' }
             }
-
-            console.log(follow);
-            return follow
-            // return { success: true, message: 'user unfollowed success' }
+            return { success: true, message: 'user Unfollowed success' }
         } catch (error) {
             console.log('Error in followUser in application user userService');
             return { success: false, message: 'Someting went wrong' }

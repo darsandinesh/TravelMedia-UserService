@@ -1,4 +1,4 @@
-import { IUser } from "../entities/IUser";
+import { IUser, UpdateUserProfileData } from "../entities/IUser";
 import bcrypt from 'bcryptjs';
 const { ObjectId } = require('mongodb');
 import { IUserDocument, User } from '../../model/userModel'
@@ -30,18 +30,21 @@ export class UserRepository {
         }
     }
 
-    async updateUserProfile(data: any): Promise<IUser | null> {
+    async updateUserProfile(data: UpdateUserProfileData): Promise<IUser | null> {
         try {
             const currentUser = await User.findById(data.id);
-            console.log('Current User:', currentUser);
-            console.log('New Data:', data.data);
 
             const userExist = await User.updateOne(
                 { _id: data.id },
-                { $set: { name: data.data.name, bio: data.data.bio, location: data.data.location, profilePicture: data.image } }
+                {
+                    $set: {
+                        name: data.data.name,
+                        bio: data.data.bio,
+                        location: data.data.location,
+                        profilePicture: data.profilePicture
+                    }
+                }
             );
-
-            console.log(userExist, '-------------============== 50');
 
             if (userExist.modifiedCount > 0) {
                 const updatedUser = await User.findById(data.id);
@@ -215,7 +218,7 @@ export class UserRepository {
 
     async checkUser(email: string, password: string): Promise<{ success: boolean, message: string, user_data?: IUser }> {
         try {
-            const user_data = await User.findOne({ email }).exec();
+            const user_data = await User.findOne({ email }).lean().exec();
 
             if (!user_data) {
                 return { success: false, message: "Incorrect Email Address or Password" };
@@ -230,6 +233,8 @@ export class UserRepository {
                 return { success: false, message: "You have been blocked by the admin", user_data };
             }
 
+            delete (user_data as Partial<typeof user_data>).password;
+
             return { success: true, message: "Logged in successful", user_data };
 
 
@@ -240,7 +245,19 @@ export class UserRepository {
         }
     }
 
-    async resetPassword(email: string, password: string): Promise<any> {
+    async check(email: string): Promise<IUser | null> {
+        try {
+            const userData = await User.findOne({ email }).lean().exec();
+            console.log(userData, '--------------------data in the check')
+            return userData;
+        } catch (error) {
+            console.log("error in save userRepo")
+            const err = error as Error;
+            throw new Error(`Error logging check user ${err.message}`);
+        }
+    }
+
+    async resetPassword(email: string, password: string): Promise<{ success: boolean, message: string }> {
         try {
             const newHashedPass = await bcrypt.hash(password, 10);
             let user_data = await User.findOne({ email }).exec();
@@ -255,7 +272,7 @@ export class UserRepository {
             }
 
         } catch (error) {
-
+            return { success: false, message: "Internal Server Error" }
         }
     }
 
@@ -296,10 +313,9 @@ export class UserRepository {
     }
 
     // saving the membership data for the user
-
     async saveMembership(data: { userId: string, amount: string }) {
         try {
-            
+
             const price = Number(data.amount);
             const update = await User.updateOne(
                 { _id: data.userId },
@@ -308,7 +324,7 @@ export class UserRepository {
                         isMember: true,
                         'membership.amount': price,
                         'membership.startDate': new Date(),
-                        'paymentStatus': 'completed', 
+                        'paymentStatus': 'completed',
                     }
                 }
             );
